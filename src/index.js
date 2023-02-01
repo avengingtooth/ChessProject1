@@ -1,3 +1,5 @@
+import { inCheck, checkmate } from "./check.js"
+
 let history = []
 let allPieces = {}
 let piecesByColor = {
@@ -6,6 +8,7 @@ let piecesByColor = {
 }
 let allIds = []
 let allLocs = {}
+let turn = 0
 
 class Pieces{
     constructor(x, y, color, name, id){
@@ -280,6 +283,13 @@ function piecesStartingLocation(row, col){
 }
 
 function display(){
+    turn++
+    history.push({
+        'allIds' : allIds, 
+        'allLocs' : allLocs, 
+        'allPieces' :allPieces
+    })
+
     let shownPieces = document.querySelectorAll('.piece')
     shownPieces.forEach(e => e.remove())
     allIds.forEach(id => {
