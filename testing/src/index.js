@@ -1,13 +1,4 @@
 import { inCheck, causingCheck, checkmate } from "./check.js"
-
-let history = []
-let allPieces = {}
-let piecesByColor = {
-    'white': [],
-    'black': []
-}
-let allIds = []
-let allLocs = {}
 let kings = {
     'white' : undefined,
     'black' : undefined
@@ -23,7 +14,14 @@ let oppositeColors = {
     'white': 'black'
 }
 
-let turn = 0
+let history = []
+let allPieces = {}
+let piecesByColor = {
+    'white': [],
+    'black': []
+}
+let allIds = []
+let allLocs = {}
 
 class Pieces{
     constructor(x, y, color, name, id){
@@ -42,12 +40,14 @@ class Pieces{
 
     calcMoves(){
         this.movements = []
+        //checks if the usual moves are an option
         this.uncheckedMoves.forEach(move => {
-            this.checkMoveValid(move, this.color)
+            this.checkMoveValid(move, this)
         })
     }
 
-    checkMoveValid (coords, pieceColor){
+    checkMoveValid (coords, obj){
+        let pieceColor = obj.color
         let x = coords[0]
         let y = coords[1]
         if(0 <= x && x < 8 && 0 <= y && y < 8){
@@ -132,6 +132,7 @@ class Pawn extends Pieces{
             }
             this.uncheckedMoves.push([this.x + this.direction, this.y])
         }
+
     }
 }
 
@@ -146,7 +147,7 @@ class Tower extends Pieces{
     setUnchecked(){
         this.uncheckedMoves = []
         super.diagonalAndHorizontal(8, 1, 0)
-        
+
     }
 }
 
@@ -175,7 +176,6 @@ class Knight extends Pieces{
             [this.x + 1, this.y - 2],
         ]
 
-        
     }
 }
 
@@ -190,6 +190,7 @@ class Bishop extends Pieces{
     setUnchecked(){
         this.uncheckedMoves = []
         super.diagonalAndHorizontal(8, 1, 1)
+
     }
 }
 
@@ -204,6 +205,7 @@ class Queen extends Pieces{
         this.uncheckedMoves = []
         super.diagonalAndHorizontal(8, 1, 1)
         super.diagonalAndHorizontal(8, 1, 0)
+
     }
 }
 
@@ -217,23 +219,8 @@ class King extends Pieces{
         this.uncheckedMoves = []
         super.diagonalAndHorizontal(1, 1, 1)
         super.diagonalAndHorizontal(1, 1, 0)
-    }
-}
 
-function deletePiece(moveIntoSqr, nextSqrId){
-    document.querySelector('.centeringDeadPieces').style.visibility = 'visible'
-    moveIntoSqr.classList.remove('piece')
-    moveIntoSqr.classList.add('deadPiece')
-    document.querySelector('.deadPieces').append(moveIntoSqr)
-    let obj = allPieces[moveIntoSqr.id]
-    setScore(-obj.value, obj.color)
-    let killedId = Number(moveIntoSqr.id)
-    let killedPiece = allPieces[nextSqrId]
-    allIds.splice(allIds.indexOf(killedId), 1)
-    delete allLocs[nextSqrId]
-    delete allPieces[moveIntoSqr.id]
-    let pieceColorArr = piecesByColor[killedPiece.color]
-    piecesByColor[killedPiece.color].splice(pieceColorArr.indexOf(killedId), 1)
+    }
 }
 
 function movePiece(x, y){
@@ -241,11 +228,7 @@ function movePiece(x, y){
     if (sqr.className.includes('possibleMove')){
         resetSelected()
         let piece = allPieces[document.querySelector('.selected').id]
-        let prevPiece = document.querySelector(`.row${x} .column${y} .piece`)
         //removes any opponent pieces that would have been on the sqr
-        if(prevPiece){
-
-        }
         if (piece){
             let nextSqrId = x * 8 + y
             let moveIntoSqr = document.querySelector(`.row${x} .column${y} .piece`)
@@ -260,6 +243,7 @@ function movePiece(x, y){
             piece.y = y
             if (piece.name == 'king'){
                 kings[piece.color] = [piece.x, piece.y]
+                console.log(kings)
             }
             display()
         }
@@ -285,8 +269,6 @@ function createGrid(){
             //make the tiles clickable for detecting tile choice
             curNewColumn.addEventListener('click', () => {
                 movePiece(row, column)
-                resetSelected()
-                //reCalcAll()
             })
             
             //check color of the boards square
@@ -339,12 +321,12 @@ function piecesStartingLocation(row, col){
 }
 
 function display(){
-    turn++
-    history.push({
-        'allIds' : allIds, 
-        'allLocs' : allLocs, 
-        'allPieces' :allPieces
-    })
+    // turn++
+    // history.push({
+    //     'allIds' : allIds, 
+    //     'allLocs' : allLocs, 
+    //     'allPieces' :allPieces
+    // })
 
     let shownPieces = document.querySelectorAll('.piece')
     shownPieces.forEach(e => e.remove())
@@ -362,26 +344,65 @@ function display(){
 
         //allows u to select a piece
         newPiece.addEventListener('click', () => {
-            if (!newPiece.className.includes('selected')){
-                if (sqr.className.includes('possibleMove')){
-                    movePiece(curPiece.x, curPiece.y)
+            if (sqr.className.includes('possibleMove')){
+                movePiece(curPiece.x, curPiece.y)
+            }
+            else{
+                document.querySelectorAll('.selected').forEach(e => e.classList.remove('selected'))
+                newPiece.classList.add('selected')
+                resetSelected()
+                curPiece.setUnchecked()
+                if (causingCheck(curPiece, allPieces, allLocs, piecesByColor[oppositeColors[curPiece.color]], kings[curPiece.color])){
+                    sqr.classList.add('pinned')
                 }
                 else{
-                    document.querySelectorAll('.selected').forEach(e => e.classList.remove('selected'))
-                    newPiece.classList.add('selected')
-                    resetSelected()
-                    curPiece.setUnchecked()
-                    if (causingCheck(curPiece, allPieces, allLocs, piecesByColor[oppositeColors[curPiece.color]], kings[curPiece.color])){
-                        sqr.classList.add('pinned')
-                    }
-                    else{
-                        curPiece.calcMoves()
-                        curPiece.showMoves()
-                    }
+                    curPiece.calcMoves()
+                    curPiece.showMoves()
                 }
+
+                //REMOVE WHEN U ADD THE LINES ABOVE !!!!!!
+                // curPiece.calcMoves()
+                // curPiece.showMoves()
             }
         })
     })
+}
+
+function resetSelected(){
+    //removes all of the markings on the previous pieces possible moves
+    document.querySelectorAll('.possibleMove').forEach(e => e.classList.remove('possibleMove'))
+    document.querySelectorAll('.pinned').forEach(e => e.classList.remove('pinned'))
+    // document.querySelectorAll('.checked').forEach(e => e.classList.remove('checked'))
+}
+
+function reCalcAll(){
+    allIds.forEach(id => {
+        let curPiece = allPieces[id]
+        curPiece.calcMoves()
+    })
+}
+
+function deletePiece(moveIntoSqr){
+    document.querySelector('.centeringDeadPieces').style.visibility = 'visible'
+    //moves the dead piece to the div with all the dead pieces on the side and removes the classes so it doesnt get deleted with the reset
+    moveIntoSqr.classList.remove('piece')
+    moveIntoSqr.classList.add('deadPiece')
+    document.querySelector('.deadPieces').append(moveIntoSqr)
+
+    //selects the piece obj so that i can be removed from the arrays and objs used to check for check and if moves are possible
+    let killedObj = allPieces[moveIntoSqr.id]
+    let killedId = killedObj.id
+    console.log(killedId)
+    //all locs remove
+    delete allLocs[killedId]
+    //pieces by color remove
+    let pieceColorArr = piecesByColor[killedObj.color]
+    piecesByColor[killedObj.color].splice(pieceColorArr.indexOf(killedId), 1)
+    //all ids
+    allIds.splice(allIds.indexOf(killedId), 1)
+    //all pieces
+    delete allPieces[killedId]
+    setScore(-killedObj.value, killedObj.color)
 }
 
 function setScore(value, color){
@@ -394,19 +415,6 @@ function setScore(value, color){
         difference *= -1
     }
     document.querySelector('.scores span').textContent = difference
-}
-
-function resetSelected(){
-    //removes all of the markings on the previous pieces possible moves
-    document.querySelectorAll('.possibleMove').forEach(e => e.classList.remove('possibleMove'))
-    document.querySelectorAll('.pinned').forEach(e => e.classList.remove('pinned'))
-    document.querySelectorAll('.checked').forEach(e => e.classList.remove('checked'))
-}
-
-function reCalcAll(){
-    allIds.forEach(id => {
-        allPieces[id].calcMoves()
-    })
 }
 
 createGrid()
