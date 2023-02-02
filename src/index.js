@@ -219,9 +219,14 @@ function movePiece(x, y){
             let nextSqrId = x * 8 + y
             let moveIntoSqr = document.querySelector(`.row${x} .column${y} .piece`)
             if (moveIntoSqr){
-                delete allPieces[moveIntoSqr.id]
+                let killedPiece = allPieces[moveIntoSqr.id]
                 allIds.splice(allIds.indexOf(nextSqrId), 1)
+                //delete allIds[nextSqrId]
                 delete allLocs[nextSqrId]
+                delete allPieces[moveIntoSqr.id]
+                let pieceColorArr = piecesByColor[killedPiece.color]
+                let ind = pieceColorArr.indexOf(Number(moveIntoSqr.id))
+                pieceColorArr.splice(ind, 1)
             }
 
             //changes the location of the piece to the new location
@@ -354,6 +359,7 @@ function resetSelected(){
     //removes all of the markings on the previous pieces possible moves
     document.querySelectorAll('.possibleMove').forEach(e => e.classList.remove('possibleMove'))
     document.querySelectorAll('.pinned').forEach(e => e.classList.remove('pinned'))
+    document.querySelectorAll('.checked').forEach(e => e.classList.remove('checked'))
 }
 
 function reCalcAll(){
