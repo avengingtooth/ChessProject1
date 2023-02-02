@@ -114,17 +114,17 @@ class Pawn extends Pieces{
     setUnchecked(){
         this.uncheckedMoves = []
         //checks if pawn is still at start so it can move two squares
-        if ((this.x == 1 && this.direction == 1) || (this.x == 6 && this.direction == -1)){
-            this.uncheckedMoves.push([this.x + (2 * this.direction), this.y])
+        if (allPieces[(this.x +this.direction) * 8 + this.y + this.direction]){
+            this.uncheckedMoves.push([this.x +this.direction, this.y + this.direction])
         }
-        else if (allPieces[(this.x +this.direction) * 8 + this.y + 1]){
-            this.uncheckedMoves.push([this.x +this.direction, this.y + 1])
-        }
-        else if (allPieces[(this.x +this.direction) * 8 + this.y - 1]){
-            this.uncheckedMoves.push([this.x +this.direction, this.y - 1])
+        else if (allPieces[(this.x +this.direction) * 8 + this.y - this.direction]){
+            this.uncheckedMoves.push([this.x +this.direction, this.y - this.direction])
         }
         
         if(!allLocs[(this.x + this.direction) * 8 + this.y]){
+            if (((this.x == 1 && this.direction == 1) || (this.x == 6 && this.direction == -1)) && (allLocs[this.x + (2 * this.direction), this.y])){
+                this.uncheckedMoves.push([this.x + (2 * this.direction), this.y])
+            }
             this.uncheckedMoves.push([this.x + this.direction, this.y])
         }
         
