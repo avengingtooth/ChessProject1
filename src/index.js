@@ -230,12 +230,10 @@ function movePiece(x, y){
             }
 
             //changes the location of the piece to the new location
-            // console.log(allLocs, 'p', piece.x * 8 + piece.y, nextSqrId)
             delete allLocs[piece.x * 8 + piece.y]
             allLocs[nextSqrId] = piece.color
             piece.x = x
             piece.y = y
-            // console.log(allLocs, 'p2')
             if (piece.name == 'king'){
                 kings[piece.color] = [piece.x, piece.y]
             }
@@ -339,17 +337,21 @@ function display(){
 
         //allows u to select a piece
         newPiece.addEventListener('click', () => {
-            document.querySelectorAll('.selected').forEach(e => e.classList.remove('selected'))
-            newPiece.classList.add('selected')
-            resetSelected()
-            curPiece.setUnchecked()
-            if (causingCheck(curPiece, allPieces, allLocs, piecesByColor[oppositeColors[curPiece.color]], kings[curPiece.color])){
-                console.log('hi')
-                sqr.classList.add('pinned')
+            if (sqr.className.includes('possibleMove')){
+                movePiece(curPiece.x, curPiece.y)
             }
             else{
-                curPiece.calcMoves()
-                curPiece.showMoves()
+                document.querySelectorAll('.selected').forEach(e => e.classList.remove('selected'))
+                newPiece.classList.add('selected')
+                resetSelected()
+                curPiece.setUnchecked()
+                if (causingCheck(curPiece, allPieces, allLocs, piecesByColor[oppositeColors[curPiece.color]], kings[curPiece.color])){
+                    sqr.classList.add('pinned')
+                }
+                else{
+                    curPiece.calcMoves()
+                    curPiece.showMoves()
+                }
             }
         })
     })
