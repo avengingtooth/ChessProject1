@@ -6,20 +6,25 @@ function inCheck(attackingIds, allPieces, king){
         attacker.uncheckedMoves.forEach(move => {
             if(move[0] == king[0] && move[1] == king[1]){
                 checked = true
+                return checked
             }
         })
+        if (checked){
+            return checked
+        }
     })
     return checked
 }
 
 //checks if moving my piece will cause me to be in check
 function causingCheck(piece, allPieces, allLocs, attackingIds, king){
-    piece.calcMoves()
+    //piece.calcMoves()
     let checked = false
-    // delete allPieces[piece.x * 8 + piece.y]
+    delete allPieces[piece.x * 8 + piece.y]
     delete allLocs[piece.x * 8 + piece.y]
     piece.movements.forEach(move => {
         let oldPiece = allPieces[move[0] * 8 + move[1]]
+        let oldLoc = allLocs[move[0] * 8 + move[1]]
         allLocs[move[0] * 8 + move[1]] = piece.color
         allPieces[move[0] * 8 + move[1]] = piece
         checked = inCheck(attackingIds, allPieces, king)
@@ -28,7 +33,11 @@ function causingCheck(piece, allPieces, allLocs, attackingIds, king){
         if(oldPiece){
             allPieces[move[0] * 8 + move[1]] = oldPiece
         }
+        if(oldLoc){
+            allLocs[move[0] * 8 + move[1]] = oldLoc
+        }
     })
+    piece.setUnchecked()
     allLocs[piece.x * 8 + piece.y] = piece.color
     allPieces[piece.x * 8 + piece.y] = piece
     return checked
@@ -36,12 +45,12 @@ function causingCheck(piece, allPieces, allLocs, attackingIds, king){
 
 function checkmate(allPieces, allLocs, idsByColor, king, color, oppositeColors){
     let defenders = idsByColor[oppositeColors[color]]
-    // defenders.forEach(id => {
-    //     let curDefender = allPieces[id]
-    //     if (!causingCheck(curDefender, allPieces, allLocs, idsByColor[color], king)){
+    defenders.forEach(id => {
+        let curDefender = allPieces[id]
+        if (!causingCheck(curDefender, allPieces, allLocs, idsByColor[color], king)){
            
-    //     }
-    // })
+        }
+    })
 }
 
 export {inCheck, causingCheck, checkmate}
