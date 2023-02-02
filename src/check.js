@@ -16,24 +16,32 @@ function inCheck(attackingIds, allPieces, king){
 function causingCheck(piece, allPieces, allLocs, attackingIds, king){
     piece.calcMoves()
     let checked = false
+    // delete allPieces[piece.x * 8 + piece.y]
     delete allLocs[piece.x * 8 + piece.y]
     piece.movements.forEach(move => {
+        let oldPiece = allPieces[move[0] * 8 + move[1]]
         allLocs[move[0] * 8 + move[1]] = piece.color
+        allPieces[move[0] * 8 + move[1]] = piece
         checked = inCheck(attackingIds, allPieces, king)
         delete allLocs[move[0] * 8 + move[1]]
+        delete allPieces[move[0] * 8 + move[1]]
+        if(oldPiece){
+            allPieces[move[0] * 8 + move[1]] = oldPiece
+        }
     })
     allLocs[piece.x * 8 + piece.y] = piece.color
+    allPieces[piece.x * 8 + piece.y] = piece
     return checked
 }
 
 function checkmate(allPieces, allLocs, idsByColor, king, color, oppositeColors){
-    let attackers = idsByColor[oppositeColors[color]]
-    attackers.forEach(id => {
-        let curPiece = allPieces[id]
-        if (!causingCheck(curPiece, allPieces, allLocs, idsByColor[color], king)){
-            console.log('yeyyy', curPiece)
-        }
-    })
+    let defenders = idsByColor[oppositeColors[color]]
+    // defenders.forEach(id => {
+    //     let curDefender = allPieces[id]
+    //     if (!causingCheck(curDefender, allPieces, allLocs, idsByColor[color], king)){
+           
+    //     }
+    // })
 }
 
 export {inCheck, causingCheck, checkmate}

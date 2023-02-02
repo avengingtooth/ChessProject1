@@ -13,8 +13,6 @@ let kings = {
     'black' : undefined
 }
 
-let curChecked = ''
-
 let oppositeColors = {
     'black': 'white',
     'white': 'black'
@@ -49,13 +47,13 @@ class Pieces{
         let y = coords[1]
         if(0 <= x && x < 8 && 0 <= y && y < 8){
             if (inCheck(piecesByColor[pieceColor], allPieces, kings[oppositeColors[pieceColor]])){
+                let kingCoords = kings[oppositeColors[pieceColor]]
+                let cur = document.querySelector(`.row${kingCoords[0]} .column${kingCoords[1]}`)
                 if (!checkmate(allPieces, allLocs, piecesByColor, kings[oppositeColors[pieceColor]], pieceColor, oppositeColors)){
-                    let kingCoords = kings[oppositeColors[pieceColor]]
-                    let cur = document.querySelector(`.row${kingCoords[0]} .column${kingCoords[1]}`)
                     cur.classList.add('checked')
                 }
                 else{
-                    console.warning('checkmate')
+                    cur.classList.add('checkmate')
                 }
             }
             let sqrPieceColor = allLocs[x * 8 + y]
@@ -114,20 +112,19 @@ class Pawn extends Pieces{
     setUnchecked(){
         this.uncheckedMoves = []
         //checks if pawn is still at start so it can move two squares
-        if (allPieces[(this.x +this.direction) * 8 + this.y + this.direction]){
-            this.uncheckedMoves.push([this.x +this.direction, this.y + this.direction])
+        if (allLocs[(this.x +this.direction) * 8 + this.y + 1]){
+            this.uncheckedMoves.push([this.x +this.direction, this.y + 1])
         }
-        else if (allPieces[(this.x +this.direction) * 8 + this.y - this.direction]){
-            this.uncheckedMoves.push([this.x +this.direction, this.y - this.direction])
+        if (allLocs[(this.x +this.direction) * 8 + this.y - 1]){
+            this.uncheckedMoves.push([this.x +this.direction, this.y - 1])
         }
-        
+
         if(!allLocs[(this.x + this.direction) * 8 + this.y]){
             if (((this.x == 1 && this.direction == 1) || (this.x == 6 && this.direction == -1)) && (allLocs[this.x + (2 * this.direction), this.y])){
                 this.uncheckedMoves.push([this.x + (2 * this.direction), this.y])
             }
             this.uncheckedMoves.push([this.x + this.direction, this.y])
         }
-        
     }
 }
 
@@ -192,7 +189,6 @@ class Queen extends Pieces{
         this.uncheckedMoves = []
         super.diagonalAndHorizontal(8, 1, 1)
         super.diagonalAndHorizontal(8, 1, 0)
-        
     }
 }
 
@@ -213,20 +209,27 @@ function movePiece(x, y){
     let sqr = document.querySelector(`.row${x} .column${y}`)
     if (sqr.className.includes('possibleMove')){
         resetSelected()
-        //removes any opponent pieces that would have been on the sqr
         let piece = allPieces[document.querySelector('.selected').id]
+        let prevPiece = document.querySelector(`.row${x} .column${y} .piece`)
+        //removes any opponent pieces that would have been on the sqr
+        // if(prevPiece){
+
+        // }
         if (piece){
             let nextSqrId = x * 8 + y
             let moveIntoSqr = document.querySelector(`.row${x} .column${y} .piece`)
             if (moveIntoSqr){
-                let killedPiece = allPieces[moveIntoSqr.id]
-                allIds.splice(allIds.indexOf(nextSqrId), 1)
-                //delete allIds[nextSqrId]
+                document.querySelector('.centeringDeadPieces').style.visibility = 'visible'
+                moveIntoSqr.classList.remove('piece')
+                moveIntoSqr.classList.add('deadPiece')
+                document.querySelector('.deadPieces').append(moveIntoSqr)
+                let killedId = Number(moveIntoSqr.id)
+                let killedPiece = allPieces[nextSqrId]
+                allIds.splice(allIds.indexOf(killedId), 1)
                 delete allLocs[nextSqrId]
                 delete allPieces[moveIntoSqr.id]
                 let pieceColorArr = piecesByColor[killedPiece.color]
-                let ind = pieceColorArr.indexOf(Number(moveIntoSqr.id))
-                pieceColorArr.splice(ind, 1)
+                piecesByColor[killedPiece.color].splice(pieceColorArr.indexOf(killedId), 1)
             }
 
             //changes the location of the piece to the new location
@@ -245,6 +248,7 @@ function movePiece(x, y){
 
 //creates all the divs for the squares and adds starter class names
 function createGrid(){
+    document.querySelector('.centeringDeadPieces').style.visibility = 'hidden'
     for (let row = 0; row < 8; row++){
         let curNewRow = document.createElement('div')
         document.querySelector('.gameBoard').append(curNewRow)
@@ -337,20 +341,22 @@ function display(){
 
         //allows u to select a piece
         newPiece.addEventListener('click', () => {
-            if (sqr.className.includes('possibleMove')){
-                movePiece(curPiece.x, curPiece.y)
-            }
-            else{
-                document.querySelectorAll('.selected').forEach(e => e.classList.remove('selected'))
-                newPiece.classList.add('selected')
-                resetSelected()
-                curPiece.setUnchecked()
-                if (causingCheck(curPiece, allPieces, allLocs, piecesByColor[oppositeColors[curPiece.color]], kings[curPiece.color])){
-                    sqr.classList.add('pinned')
+            if (!newPiece.className.includes('selected')){
+                if (sqr.className.includes('possibleMove')){
+                    movePiece(curPiece.x, curPiece.y)
                 }
                 else{
-                    curPiece.calcMoves()
-                    curPiece.showMoves()
+                    document.querySelectorAll('.selected').forEach(e => e.classList.remove('selected'))
+                    newPiece.classList.add('selected')
+                    resetSelected()
+                    curPiece.setUnchecked()
+                    if (causingCheck(curPiece, allPieces, allLocs, piecesByColor[oppositeColors[curPiece.color]], kings[curPiece.color])){
+                        sqr.classList.add('pinned')
+                    }
+                    else{
+                        curPiece.calcMoves()
+                        curPiece.showMoves()
+                    }
                 }
             }
         })
@@ -361,7 +367,7 @@ function resetSelected(){
     //removes all of the markings on the previous pieces possible moves
     document.querySelectorAll('.possibleMove').forEach(e => e.classList.remove('possibleMove'))
     document.querySelectorAll('.pinned').forEach(e => e.classList.remove('pinned'))
-    document.querySelectorAll('.checked').forEach(e => e.classList.remove('checked'))
+    // document.querySelectorAll('.checked').forEach(e => e.classList.remove('checked'))
 }
 
 function reCalcAll(){

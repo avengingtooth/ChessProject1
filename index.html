@@ -9,17 +9,34 @@
     <link rel="stylesheet" href="./styles/styles.css">
 
     <script defer type="module" src="./src/index.js"></script>
+    <script defer src="./src/styleButtons.js"></script>
     
 </head>
 <body>
-    <section class="stats">
+    <header>
+        <div class="headerImg">
+            <h1>Chess</h1>
+        </div>
+    </header>
+    <section class = 'content'>
+        <section class="stats">
+            <div class="scores">
+                <p class="black">score: <span>0</span></p>
+                <p class="white">score: <span>0</span></p>
+            </div>
+            <div class="centeringDeadPieces">
+                Dead Pieces
+                <div class="deadPieces"></div>
+            </div>
+        </section>
+        <section class="boardBoarder">
+            <section class="gameBoard">
 
-    </section>
-    <section class="gameBoard">
-
-    </section>
-    <section class="settings">
-
+            </section>
+        </section>
+        <section class="settings">
+            <ul></ul>
+        </section>
     </section>
 </body>
 </html>
