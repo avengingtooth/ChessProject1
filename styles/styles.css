@@ -59,3 +59,11 @@ body{
 .selected{
     background-color: greenyellow;
 }
+
+.pinned{
+    background-color: rgba(45, 19, 161, 0.542);
+}
+
+.checked{
+    background-color: magenta;
+}

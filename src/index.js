@@ -1,4 +1,4 @@
-import { inCheck, checkmate } from "./check.js"
+import { inCheck, causingCheck, checkmate } from "./check.js"
 
 let history = []
 let allPieces = {}
@@ -8,6 +8,18 @@ let piecesByColor = {
 }
 let allIds = []
 let allLocs = {}
+let kings = {
+    'white' : undefined,
+    'black' : undefined
+}
+
+let curChecked = ''
+
+let oppositeColors = {
+    'black': 'white',
+    'white': 'black'
+}
+
 let turn = 0
 
 class Pieces{
@@ -27,7 +39,6 @@ class Pieces{
 
     calcMoves(){
         this.movements = []
-        //checks if the usual moves are an option
         this.uncheckedMoves.forEach(move => {
             this.checkMoveValid(move, this.color)
         })
@@ -37,6 +48,16 @@ class Pieces{
         let x = coords[0]
         let y = coords[1]
         if(0 <= x && x < 8 && 0 <= y && y < 8){
+            if (inCheck(piecesByColor[pieceColor], allPieces, kings[oppositeColors[pieceColor]])){
+                if (!checkmate(allPieces, allLocs, piecesByColor, kings[oppositeColors[pieceColor]], pieceColor, oppositeColors)){
+                    let kingCoords = kings[oppositeColors[pieceColor]]
+                    let cur = document.querySelector(`.row${kingCoords[0]} .column${kingCoords[1]}`)
+                    cur.classList.add('checked')
+                }
+                else{
+                    console.warning('checkmate')
+                }
+            }
             let sqrPieceColor = allLocs[x * 8 + y]
             if(!sqrPieceColor || sqrPieceColor != pieceColor){
                 this.movements.push([x, y])
@@ -55,10 +76,14 @@ class Pieces{
         let cont = [true, true, true, true]
         for (let i = 1; i <= times; i++){
             let toCheck = [
-                [this.x + xInc * i, this.y + yInc * i],
+                //right, bottom right
+                [this.x + yInc * i, this.y + xInc * i],
+                // down, bottom left
                 [this.x + xInc * i, this.y - yInc * i],
-                [this.x - yInc * i, this.y + xInc * i],
-                [this.x - yInc * i, this.y - xInc * i]
+                // left, top left
+                [this.x - yInc * i, this.y - xInc * i],
+                // up, top right
+                [this.x - xInc * i , this.y + yInc * i]
             ]   
             toCheck.forEach((move, ind) => {
                 let nextSqr = allLocs[move[0] * 8 + move[1]]
@@ -102,7 +127,7 @@ class Pawn extends Pieces{
         if(!allLocs[(this.x + this.direction) * 8 + this.y]){
             this.uncheckedMoves.push([this.x + this.direction, this.y])
         }
-        super.calcMoves()
+        
     }
 }
 
@@ -115,7 +140,7 @@ class Tower extends Pieces{
     setUnchecked(){
         this.uncheckedMoves = []
         super.diagonalAndHorizontal(8, 1, 0)
-        super.calcMoves()
+        
     }
 }
 
@@ -142,7 +167,7 @@ class Knight extends Pieces{
             [this.x + 1, this.y - 2],
         ]
 
-        super.calcMoves()
+        
     }
 }
 
@@ -155,7 +180,6 @@ class Bishop extends Pieces{
     setUnchecked(){
         this.uncheckedMoves = []
         super.diagonalAndHorizontal(8, 1, 1)
-        super.calcMoves()
     }
 }
 
@@ -168,7 +192,7 @@ class Queen extends Pieces{
         this.uncheckedMoves = []
         super.diagonalAndHorizontal(8, 1, 1)
         super.diagonalAndHorizontal(8, 1, 0)
-        super.calcMoves()
+        
     }
 }
 
@@ -176,13 +200,12 @@ class King extends Pieces{
     constructor(x, y, color, name, id){
         super(x, y , color, name, id)
         this.uncheckedMoves = []
+        kings[this.color] = [this.x, this.y]
     }
     setUnchecked(){
         this.uncheckedMoves = []
         super.diagonalAndHorizontal(1, 1, 1)
         super.diagonalAndHorizontal(1, 1, 0)
-        console.log(this.uncheckedMoves)
-        super.calcMoves()
     }
 }
 
@@ -202,10 +225,15 @@ function movePiece(x, y){
             }
 
             //changes the location of the piece to the new location
+            // console.log(allLocs, 'p', piece.x * 8 + piece.y, nextSqrId)
             delete allLocs[piece.x * 8 + piece.y]
             allLocs[nextSqrId] = piece.color
             piece.x = x
             piece.y = y
+            // console.log(allLocs, 'p2')
+            if (piece.name == 'king'){
+                kings[piece.color] = [piece.x, piece.y]
+            }
             display()
         }
         reCalcAll()
@@ -310,7 +338,14 @@ function display(){
             newPiece.classList.add('selected')
             resetSelected()
             curPiece.setUnchecked()
-            curPiece.showMoves()
+            if (causingCheck(curPiece, allPieces, allLocs, piecesByColor[oppositeColors[curPiece.color]], kings[curPiece.color])){
+                console.log('hi')
+                sqr.classList.add('pinned')
+            }
+            else{
+                curPiece.calcMoves()
+                curPiece.showMoves()
+            }
         })
     })
 }
@@ -318,6 +353,7 @@ function display(){
 function resetSelected(){
     //removes all of the markings on the previous pieces possible moves
     document.querySelectorAll('.possibleMove').forEach(e => e.classList.remove('possibleMove'))
+    document.querySelectorAll('.pinned').forEach(e => e.classList.remove('pinned'))
 }
 
 function reCalcAll(){
