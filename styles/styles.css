@@ -22,7 +22,12 @@
 .gradient{
     background-image: linear-gradient(to top,var(--whiteColor), var(--blackColor), var(--whiteColor), var(--blackColor), var(--whiteColor));
     background-size: auto 200%;
-    animation: up 0.1s infinite linear;
+    animation: up 0.1s infinite linear, turnLeft 1s infinite linear;
+    border-radius: 10%;
+}
+
+.gradient .gameBoard{
+    animation: turnRight 1s infinite linear;
 }
 
 @keyframes up {
@@ -32,6 +37,24 @@
 
     100%{
         background-position: bottom right; 
+    }
+}
+
+@keyframes turnLeft {
+    from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(359deg);
+    }
+}
+
+@keyframes turnRight {
+    from {
+        transform: rotate(360deg);
+      }
+      to {
+        transform: rotate(1deg);
     }
 }
 
@@ -46,6 +69,11 @@
     text-align: center;
 }
 
+.gameBoard{
+    display: grid;
+    grid-template-rows: repeat(8, 1fr);
+}
+
 * {
     padding: 0;
     margin: 0;
@@ -55,11 +83,6 @@
 .content{
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-}
-
-.gameBoard{
-    display: grid;
-    grid-template-rows: repeat(8, 1fr);
 }
 
 .row{
@@ -111,7 +134,7 @@ header{
     background-color:  var(--blackColor);
     width: 100%;
     padding: 1%;
-    margin-bottom: 2%;
+    margin-bottom: 7%;
     text-align: center;
 }
 
