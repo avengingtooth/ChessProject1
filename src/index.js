@@ -1,4 +1,5 @@
 import { inCheck, causingCheck, checkmate } from "./check.js"
+import {drawPawn, drawTower} from './pieceDrawing.js'
 let kings = {
     'white' : undefined,
     'black' : undefined
@@ -22,6 +23,11 @@ let piecesByColor = {
 }
 let allIds = []
 let allLocs = {}
+
+let checked = {
+    'black': false,
+    'white': false
+}
 
 class Pieces{
     constructor(x, y, color, name, id){
@@ -51,19 +57,28 @@ class Pieces{
         let x = coords[0]
         let y = coords[1]
         if(0 <= x && x < 8 && 0 <= y && y < 8){
-            if (inCheck(piecesByColor[pieceColor], allPieces, kings[oppositeColors[pieceColor]])){
-                let kingCoords = kings[oppositeColors[pieceColor]]
-                let cur = document.querySelector(`.row${kingCoords[0]} .column${kingCoords[1]}`)
-                if (!checkmate(allPieces, allLocs, piecesByColor, kings[oppositeColors[pieceColor]], pieceColor, oppositeColors)){
-                    cur.classList.add('checked')
+            if(!checked[pieceColor]){
+                if (inCheck(piecesByColor[pieceColor], allPieces, kings[oppositeColors[pieceColor]], true)){
+                    let kingCoords = kings[oppositeColors[pieceColor]]
+                    let cur = document.querySelector(`.row${kingCoords[0]} .column${kingCoords[1]}`)
+                    if (!checkmate(allPieces, allLocs, piecesByColor, kings[oppositeColors[pieceColor]], pieceColor, oppositeColors)){
+                        cur.classList.add('checked')
+                        checked[oppositeColors[pieceColor]] = true
+                    }
+                    else{
+                        cur.classList.add('checkmate')
+                    }
                 }
-                else{
-                    cur.classList.add('checkmate')
+                let sqrPieceColor = allLocs[x * 8 + y]
+                if(!sqrPieceColor || sqrPieceColor != pieceColor){
+                    this.movements.push([x, y])
                 }
             }
-            let sqrPieceColor = allLocs[x * 8 + y]
-            if(!sqrPieceColor || sqrPieceColor != pieceColor){
-                this.movements.push([x, y])
+            else{
+                let sqrPieceColor = allLocs[x * 8 + y]
+                if(!sqrPieceColor || sqrPieceColor != pieceColor){
+                    this.movements.push([x, y])
+                }
             }
         }
     }
@@ -112,6 +127,7 @@ class Pawn extends Pieces{
         }
         this.uncheckedMoves = []
         this.value = 1
+        this.draw = drawPawn
         setScore(this.value, this.color)
     }
 
@@ -141,6 +157,7 @@ class Tower extends Pieces{
         super(x, y , color, name, id)
         this.uncheckedMoves = []
         this.value = 5
+        this.draw = drawTower
         setScore(this.value, this.color)
     }
 
@@ -214,6 +231,7 @@ class King extends Pieces{
         super(x, y , color, name, id)
         this.uncheckedMoves = []
         kings[this.color] = [this.x, this.y]
+        this.checked = false
     }
     setUnchecked(){
         this.uncheckedMoves = []
@@ -243,7 +261,6 @@ function movePiece(x, y){
             piece.y = y
             if (piece.name == 'king'){
                 kings[piece.color] = [piece.x, piece.y]
-                console.log(kings)
             }
             display()
         }
@@ -340,7 +357,15 @@ function display(){
         newPiece.classList.add('piece')
         newPiece.classList.add(`${curPiece.color}`) 
         newPiece.setAttribute('id', curPiece.id)
-        newPiece.textContent = curPiece.name
+        // if(curPiece.draw){
+        //     const canvas = document.createElement('canvas')
+        //     const ctx = canvas.getContext('2d')
+        //     newPiece.append(canvas)
+        //     curPiece.draw(0, ctx)
+        // }
+        // else{
+            newPiece.textContent = curPiece.name
+        // }
 
         //allows u to select a piece
         newPiece.addEventListener('click', () => {
@@ -352,17 +377,25 @@ function display(){
                 newPiece.classList.add('selected')
                 resetSelected()
                 curPiece.setUnchecked()
-                if (causingCheck(curPiece, allPieces, allLocs, piecesByColor[oppositeColors[curPiece.color]], kings[curPiece.color])){
-                    sqr.classList.add('pinned')
+                if (!checked[curPiece.color]){
+                    if (causingCheck(curPiece, allPieces, allLocs, piecesByColor[oppositeColors[curPiece.color]], kings[curPiece.color], true)){
+                        sqr.classList.add('pinned')
+                    }
+                    else{
+                        curPiece.calcMoves()
+                        curPiece.showMoves()
+                    }
+
                 }
                 else{
-                    curPiece.calcMoves()
-                    curPiece.showMoves()
+                    if (!causingCheck(curPiece, allPieces, allLocs, piecesByColor[oppositeColors[curPiece.color]], kings[curPiece.color], false)){
+                        sqr.classList.add('pinned')
+                    }
+                    else{
+                        curPiece.calcMoves()
+                        curPiece.showMoves()
+                    }
                 }
-
-                //REMOVE WHEN U ADD THE LINES ABOVE !!!!!!
-                // curPiece.calcMoves()
-                // curPiece.showMoves()
             }
         })
     })
@@ -392,7 +425,6 @@ function deletePiece(moveIntoSqr){
     //selects the piece obj so that i can be removed from the arrays and objs used to check for check and if moves are possible
     let killedObj = allPieces[moveIntoSqr.id]
     let killedId = killedObj.id
-    console.log(killedId)
     //all locs remove
     delete allLocs[killedId]
     //pieces by color remove
@@ -403,6 +435,9 @@ function deletePiece(moveIntoSqr){
     //all pieces
     delete allPieces[killedId]
     setScore(-killedObj.value, killedObj.color)
+    if(killedObj.name == 'king'){
+        gameEnd()
+    }
 }
 
 function setScore(value, color){
@@ -415,6 +450,10 @@ function setScore(value, color){
         difference *= -1
     }
     document.querySelector('.scores span').textContent = difference
+}
+
+function gameEnd(){
+    console.log('idk')
 }
 
 createGrid()

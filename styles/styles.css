@@ -199,9 +199,19 @@ li{
 
 .scores{
     width: 60%;
+    background-color: var(--whiteColor);
+    border: solid var(--blackColor) 2px;
 }
 
 .scores p{
     padding: 3%;
     margin: 2%;
+}
+
+.scores span{
+    border: 0;
+}
+
+.canvas{
+    width: 100%;
 }
