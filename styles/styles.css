@@ -20,13 +20,16 @@
 }
 
 .gradient{
+    /* gradient is symetrical to make the effect of it looping*/
     background-image: linear-gradient(to top,var(--whiteColor), var(--blackColor), var(--whiteColor), var(--blackColor), var(--whiteColor));
     background-size: auto 200%;
+    /* up makes it gradient move up and down and turnLeft turns the boarder around it */
     animation: up 0.1s infinite linear, turnLeft 1s infinite linear;
     border-radius: 10%;
 }
 
 .gradient .gameBoard{
+    /* turnRight counters the turning of the sections surrounding the board to make it not move */
     animation: turnRight 1s infinite linear;
 }
 
@@ -210,8 +213,24 @@ li{
 
 .scores span{
     border: 0;
+    background-color: transparent;
 }
 
 .canvas{
     width: 100%;
+}
+
+.gameEnd{
+    position: absolute;
+    width: 50%;
+    height: 50%;
+    top: 25%;
+    left: 25%;
+    background-color: black;
+    display: none;
+    color: white;
+    font-size: 3rem;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
 }

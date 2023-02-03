@@ -29,6 +29,8 @@ let checked = {
     'white': false
 }
 
+let turn = 0
+
 class Pieces{
     constructor(x, y, color, name, id){
         this.x = x
@@ -61,13 +63,8 @@ class Pieces{
                 if (inCheck(piecesByColor[pieceColor], allPieces, kings[oppositeColors[pieceColor]], true)){
                     let kingCoords = kings[oppositeColors[pieceColor]]
                     let cur = document.querySelector(`.row${kingCoords[0]} .column${kingCoords[1]}`)
-                    if (!checkmate(allPieces, allLocs, piecesByColor, kings[oppositeColors[pieceColor]], pieceColor, oppositeColors)){
-                        cur.classList.add('checked')
-                        checked[oppositeColors[pieceColor]] = true
-                    }
-                    else{
-                        cur.classList.add('checkmate')
-                    }
+                    cur.classList.add('checked')
+                    checked[oppositeColors[pieceColor]] = true
                 }
                 let sqrPieceColor = allLocs[x * 8 + y]
                 if(!sqrPieceColor || sqrPieceColor != pieceColor){
@@ -247,30 +244,46 @@ function movePiece(x, y){
         resetSelected()
         let piece = allPieces[document.querySelector('.selected').id]
         //removes any opponent pieces that would have been on the sqr
-        if (piece){
-            let nextSqrId = x * 8 + y
-            let moveIntoSqr = document.querySelector(`.row${x} .column${y} .piece`)
-            if (moveIntoSqr){
-                deletePiece(moveIntoSqr, nextSqrId)
-            }
+        if (turn % 2 == 0 && piece.color == 'white' || (turn % 2 == 1 && piece.color == 'black')){
+            document.querySelectorAll('.checked').forEach(e => e.classList.remove('checked'))
+            turn++
+            if (piece){
+                let nextSqrId = x * 8 + y
+                let moveIntoSqr = document.querySelector(`.row${x} .column${y} .piece`)
+                if (moveIntoSqr){
+                    deletePiece(moveIntoSqr, nextSqrId)
+                }
 
-            //changes the location of the piece to the new location
-            delete allLocs[piece.x * 8 + piece.y]
-            allLocs[nextSqrId] = piece.color
-            piece.x = x
-            piece.y = y
-            if (piece.name == 'king'){
-                kings[piece.color] = [piece.x, piece.y]
+                //changes the location of the piece to the new location
+                delete allLocs[piece.x * 8 + piece.y]
+                allLocs[nextSqrId] = piece.color
+                piece.x = x
+                piece.y = y
+                if (piece.name == 'king'){
+                    kings[piece.color] = [piece.x, piece.y]
+                }
+                display()
             }
-            display()
+            reCalcAll()
+            let kingCoords = kings[oppositeColors[piece.color]]
+            let cur = document.querySelector(`.row${kingCoords[0]} .column${kingCoords[1]}`)
+            if (cur.className.includes('checked')){
+                if (checkmate(allPieces, allLocs, piecesByColor, kings[oppositeColors[piece.color]], piece.color, oppositeColors)){
+                    cur.classList.add('checkmate')
+                    gameEnd(oppositeColors[piece.color])
+                }
+            }
         }
-        reCalcAll()
     }
 }
 
 //creates all the divs for the squares and adds starter class names
 function createGrid(){
+    // document.querySelector('.restart').addEventListener('click', reset)
     document.querySelector('.centeringDeadPieces').style.visibility = 'hidden'
+    let board = document.createElement('section')
+    board.classList.add('gameBoard')
+    document.querySelector('.boardBoarder').append(board)
     for (let row = 0; row < 8; row++){
         let curNewRow = document.createElement('div')
         document.querySelector('.gameBoard').append(curNewRow)
@@ -296,7 +309,7 @@ function createGrid(){
                 curNewColumn.classList.add('black')
             }
 
-            //add a piece in sqr if present at loc at start
+            // add a piece in sqr if present at loc at start
             if (row <= 1 || row >= 6){
                 piecesStartingLocation(row, column)
             }
@@ -332,7 +345,7 @@ function piecesStartingLocation(row, col){
             new King(row, col, color, 'king', id)
         }
     }
-    else{
+    else if (row == 1 || row == 6){
         new Pawn(row, col, color, 'pawn', id)
     }
 }
@@ -346,6 +359,7 @@ function display(){
     // })
 
     let shownPieces = document.querySelectorAll('.piece')
+    console.log(shownPieces)
     shownPieces.forEach(e => e.remove())
     allIds.forEach(id => {
         //get the piece obj
@@ -374,8 +388,8 @@ function display(){
             }
             else{
                 document.querySelectorAll('.selected').forEach(e => e.classList.remove('selected'))
-                newPiece.classList.add('selected')
                 resetSelected()
+                newPiece.classList.add('selected')
                 curPiece.setUnchecked()
                 if (!checked[curPiece.color]){
                     if (causingCheck(curPiece, allPieces, allLocs, piecesByColor[oppositeColors[curPiece.color]], kings[curPiece.color], true)){
@@ -388,11 +402,12 @@ function display(){
 
                 }
                 else{
+                    console.log(causingCheck(curPiece, allPieces, allLocs, piecesByColor[oppositeColors[curPiece.color]], kings[curPiece.color], false))
                     if (!causingCheck(curPiece, allPieces, allLocs, piecesByColor[oppositeColors[curPiece.color]], kings[curPiece.color], false)){
                         sqr.classList.add('pinned')
                     }
                     else{
-                        curPiece.calcMoves()
+                        curPiece.movements = causingCheck(curPiece, allPieces, allLocs, piecesByColor[oppositeColors[curPiece.color]], kings[curPiece.color], false)
                         curPiece.showMoves()
                     }
                 }
@@ -405,7 +420,6 @@ function resetSelected(){
     //removes all of the markings on the previous pieces possible moves
     document.querySelectorAll('.possibleMove').forEach(e => e.classList.remove('possibleMove'))
     document.querySelectorAll('.pinned').forEach(e => e.classList.remove('pinned'))
-    // document.querySelectorAll('.checked').forEach(e => e.classList.remove('checked'))
 }
 
 function reCalcAll(){
@@ -436,12 +450,12 @@ function deletePiece(moveIntoSqr){
     delete allPieces[killedId]
     setScore(-killedObj.value, killedObj.color)
     if(killedObj.name == 'king'){
-        gameEnd()
+        gameEnd(oppositeColors[killedObj.color])
     }
 }
 
 function setScore(value, color){
-    scores[color] += Number(value)
+    scores[color] += value
     let scoresSelect = document.querySelector('.scores span')
     let difference = scores[color] - scores[oppositeColors[color]]
     if (difference <= 0){
@@ -452,9 +466,29 @@ function setScore(value, color){
     document.querySelector('.scores span').textContent = difference
 }
 
-function gameEnd(){
+function gameEnd(winningColor){
     console.log('idk')
+    let popUp = document.querySelector('.gameEnd')
+    popUp.style.display = 'flex'
+    document.querySelector('.gameEnd p').textContent = `${winningColor} won!!`.toUpperCase()
 }
 
-createGrid()
-display()
+function gameStart(){
+    document.querySelector('.gameEnd').style.display = 'none'
+    createGrid()
+    display()
+}
+
+function reset(){
+    console.log('reset')
+    // let board = document.querySelector('.gameBoard')
+    // let child = board.lastElementChild; 
+    // while (child) {
+    //     board.removeChild(child);
+    //     child = board.lastElementChild;
+    // }
+    // console.log(document)
+    // gameStart()
+}
+
+gameStart()

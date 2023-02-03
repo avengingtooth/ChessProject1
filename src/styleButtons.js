@@ -79,11 +79,6 @@ function gaby(){
     document.querySelector('.boardBoarder').classList.add('gradient')
 }
 
-function normal(){
-    colorSwaps('seagreen', 'beige', '#4b6b43', '#C6DEA6', 'black', 1)
-    document.querySelector('.boardBoarder').classList.remove('gradient')
-}
-
 function colorSwaps(black, white, blackPiece, whitePiece, borderColor, borderWidth){
     let root = document.querySelector(':root').style
     root.setProperty('--blackColor', black)
@@ -92,6 +87,11 @@ function colorSwaps(black, white, blackPiece, whitePiece, borderColor, borderWid
     root.setProperty('--borderColor', borderColor)
     root.setProperty('--blackPiece', blackPiece)
     root.setProperty('--whitePiece', whitePiece)
+}
+
+function normal(){
+    colorSwaps('seagreen', 'beige', '#4b6b43', '#C6DEA6', 'black', 1)
+    document.querySelector('.boardBoarder').classList.remove('gradient')
 }
 
 setUp()
