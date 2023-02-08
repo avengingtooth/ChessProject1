@@ -10,3 +10,6 @@ Normal game of chess
 - Live Preview
 - Free to Use
 - Modifying Color Palettes
+
+## How to use
+https://avengingtooth.github.io/ChessProject1/
